@@ -13,64 +13,97 @@
 #include <maya/MSimple.h>
 #include <maya/MGlobal.h>
 #include <maya/MSyntax.h>
-#define NFLAG "-name"
+#include <maya/MItDag.h>
+#include <maya/MArgDatabase.h>
+#define EXPORT _declspec(dllexport)
+#define NFLAG "-n"
 #define NFLAGLONG "-name"
-#define IDFLAG "-id"
-#define IDFLAGLONG "-id"
+#define IDENTFLAG "-i"
+#define IDENTFLAGLONG "-id"
+#define TESTFLAG "-t"
+#define TESTFLAGLONG "-test"
+
 
 
 // Use helper macro to register a command with Maya.  It creates and
 // registers a command that does not support undo or redo.  The 
 // created class derives off of MPxCommand.
 //
-DeclareSimpleCommand( helloMaya, "", "2015");
-//http://download.autodesk.com/global/docs/mayasdk2012/en_us/index.html?url=files/Command_plugins_Flags.htm,topicNumber=d28e2752
-MSyntax helloMaya::newSyntax() {
-	MSyntax syntax;
-	syntax.addFlag(NFLAG, NFLAGLONG, MSyntax::kString);
-	syntax.addFlag(IDFLAG, IDFLAGLONG, MSyntax::kString);
-	syntax.makeFlagMultiUse(NFLAG);
-	return syntax;
-}
+//DeclareSimpleCommand( helloMaya, "", "2015");
 
-MStatus helloMaya::doIt( const MArgList& args )
-//
-//	Description:
-//		implements the MEL helloMaya command.
-//
-//	Arguments:
-//		args - the argument list that was passes to the command from MEL
-//
-//	Return Value:
-//		MS::kSuccess - command succeeded
-//		MS::kFailure - command failed (returning this value will cause the 
-//                     MEL script that is being run to terminate unless the
-//                     error is caught using a "catch" statement.
-//
+class helloMaya : public MPxCommand
 {
-
-	MSyntax syntax = newSyntax();
-
-
-	MString dialogBox = "confirmDialog -message \"name:  id:\" -button \"OK\" -title \"Hello World\";";	//"confirmDialog -title \"Hello World!\" -message \"name: +";
-
-	MStatus stat = MGlobal::executeCommand(dialogBox);//MS::kSuccess;
-
-	// Since this class is derived off of MPxCommand, you can use the 
-	// inherited methods to return values and set error messages
-	//
-	MGlobal::displayInfo("Hello World\n");
-	setResult( "helloMaya command executed!\n" );
-	const MStatus failed = MS::kFailure;
-	const MStatus success = MS::kSuccess;
-	if (stat == failed)
-	{
-		MGlobal::displayError("error");
-		return MS::kFailure;
+public:
+	//http://download.autodesk.com/global/docs/mayasdk2012/en_us/index.html?url=files/Command_plugins_Flags.htm,topicNumber=d28e2752
+	static MSyntax newSyntax() {
+		MSyntax syntax;
+		syntax.addFlag(TESTFLAG, TESTFLAGLONG, MSyntax::kLong);
+		syntax.addFlag(NFLAG, NFLAGLONG, MSyntax::kString);
+		syntax.addFlag(IDENTFLAG, IDENTFLAGLONG, MSyntax::kLong);
+		return syntax;
 	}
-	if (stat == success)
-		return MStatus::kSuccess;
-	
 
+		virtual MStatus helloMaya::doIt(const MArgList& args)
+	{
+		MStatus status;
+		MString name = "";
+		int id = 0;
+
+
+		MArgDatabase parser(syntax(), args, &status);
+		if (status != MS::kSuccess)
+		{
+			return status;
+		}
+
+		if (parser.isFlagSet(TESTFLAG))
+		{
+			parser.getFlagArgument(TESTFLAG, 0, id);
+		}
+
+		if (parser.isFlagSet(NFLAG))
+		{
+			parser.getFlagArgument(NFLAG, 0, name);
+		}
+
+
+		MString dialogBox = "confirmDialog -message \"name: " + name + "ID: " + id + "\" -button \"OK\" -title \"Hello World\";";
+
+		MStatus stat = MGlobal::executeCommand(dialogBox);
+		MGlobal::displayInfo("Hello World\n");
+		setResult("helloMaya command executed!\n");
+		const MStatus failed = MS::kFailure;
+		const MStatus success = MS::kSuccess;
+		if (stat == failed)
+		{
+			MGlobal::displayError("error");
+			return MS::kFailure;
+		}
+		if (stat == success)
+			return MStatus::kSuccess;
+
+
+		return status;
+	}
+	static void *creator() { return new helloMaya; }
+
+};
+
+// Initialize Plugin upon loading
+EXPORT MStatus initializePlugin(MObject obj)
+{
+	MStatus stat;
+	MFnPlugin plugin(obj, "CIS660", "1.0", "Any");
+	stat = plugin.registerCommand("helloMaya", helloMaya::creator, helloMaya::newSyntax);
+	if (!stat) stat.perror("registerCommand failed");
 	return stat;
 }
+// Cleanup Plugin upon unloading
+EXPORT MStatus uninitializePlugin(MObject obj)
+{
+	MStatus stat;
+	MFnPlugin plugin(obj);
+	stat = plugin.deregisterCommand("helloMaya");
+	if (!stat) stat.perror("deregisterCommand failed");
+	return stat;
+}
