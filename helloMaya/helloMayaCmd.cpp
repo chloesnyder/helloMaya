@@ -20,8 +20,8 @@
 #define NFLAGLONG "-name"
 #define IDENTFLAG "-i"
 #define IDENTFLAGLONG "-id"
-#define TESTFLAG "-t"
-#define TESTFLAGLONG "-test"
+#define TESTFLAG "-i"
+#define TESTFLAGLONG "-identifier"
 
 
 
@@ -67,7 +67,7 @@ public:
 		}
 
 
-		MString dialogBox = "confirmDialog -message \"name: " + name + "ID: " + id + "\" -button \"OK\" -title \"Hello World\";";
+		MString dialogBox = "confirmDialog -message \"name: " + name + "\\nID: " + id + "\" -button \"OK\" -title \"Hello World\";";
 
 		MStatus stat = MGlobal::executeCommand(dialogBox);
 		MGlobal::displayInfo("Hello World\n");
