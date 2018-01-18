@@ -11,6 +11,7 @@
 // Includes everything needed to register a simple MEL command with Maya.
 // 
 #include <maya/MSimple.h>
+#include <maya/MGlobal.h>
 
 // Use helper macro to register a command with Maya.  It creates and
 // registers a command that does not support undo or redo.  The 
@@ -33,12 +34,26 @@ MStatus helloMaya::doIt( const MArgList& args )
 //                     error is caught using a "catch" statement.
 //
 {
-	MStatus stat = MS::kSuccess;
+
+	MString dialogBox = "confirmDialog -message \"name:  id:\" -button \"OK\" -title \"Hello World\";";	//"confirmDialog -title \"Hello World!\" -message \"name: +";
+
+	MStatus stat = MGlobal::executeCommand(dialogBox);//MS::kSuccess;
 
 	// Since this class is derived off of MPxCommand, you can use the 
 	// inherited methods to return values and set error messages
 	//
+	MGlobal::displayInfo("Hello World\n");
 	setResult( "helloMaya command executed!\n" );
+	const MStatus failed = MS::kFailure;
+	const MStatus success = MS::kSuccess;
+	if (stat == failed)
+	{
+		MGlobal::displayError("error");
+		return MS::kFailure;
+	}
+	if (stat == success)
+		return MStatus::kSuccess;
+	
 
 	return stat;
 }
